@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+
+{% block stylesheets %}
+    <link href="{{ asset('bundles/styl.css') }}" type="text/css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}
+    Rejestracja
+{% endblock %}
+
+{% block body %}
+    {{ form_start(form) }}
+    {{ form_widget(form) }}
+    {{ form_end(form) }}
+{% endblock %}

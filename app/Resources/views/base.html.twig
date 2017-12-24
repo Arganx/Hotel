@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="description" content="Testing site">
+    <meta name="author" content="Mikołaj">
+    <link href="{{ asset('bundles/menu_style.css') }}" type="text/css" rel="stylesheet" />
+    {% block stylesheets %}
+
+    {% endblock %}
+
+    <title>{% block title %}Start{% endblock %}</title>
+
+</head>
+
+<body>
+<h1 id="Main_text">Hotel</h1>
+
+<nav>
+        <ul class="ul_menu">
+            <li class="li_menu">
+                <a class ="Menu_text" href="/">Domowa</a>
+                <a class ="Menu_text" href="/my">Aktualnosci</a>
+                <a class ="Menu_text" href="/second">Kontakt</a>
+                <a class ="Menu_text" href="/rooms">Zobacz nasze pokoje</a>
+                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                    {% if app.user.type == 'admin' %}
+                        <div class="dropdown">
+                        <button class="dropbtn">Admin panel
+                        </button>
+                        <div class="dropdown-content">
+                        <a href="/superRegister">Dodaj uzytkownika</a>
+                        <a href="/deleteUser">Usun uzytkownika</a>
+                        <a href="/editUser">Zmien haslo uzytkownika</a>
+                    </div>
+
+                    {% endif %}
+                {% endif %}
+            </li>
+
+            <li class="menu_login" id="login">
+                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                    <a class="menu_login" href="{{ logout_path() }}">Wyloguj</a>
+                {% endif %}
+                {% if not is_granted('IS_AUTHENTICATED_FULLY') %}
+                    <a class="menu_login" href="/login">Zaloguj sie</a>
+                {% endif %}
+            </li>
+        </ul>
+</nav>
+
+<div class="container">
+
+    <div class="row">
+        <div class="call-md-12">
+            {% block body %}{% endblock %}
+        </div>
+    </div>
+
+</div><!-- /.container -->
+{% block javascripts %}
+<script>console.log(1234567890);
+    var kot = "kot";
+    var i;
+    console.log(kot);
+    if(kot == "pi3s")
+        for(i = 0; i < 11; i++)
+            console.log(i);
+    else
+        for(i = 0; i<10;i++)
+            console.log("ni3 pi3s" + i);
+
+
+    i = -3;
+    while (i < 4) {
+        console.log(i);
+        i++;
+
+    }
+
+    var object = {
+        name: "Maci3k",
+        height: 187,
+        print : function() {
+            console.log(this.name + " " + this.height + " cm wzrostu")
+        }
+    }
+    object.print()
+</script>
+{% endblock %}
+</body>
+</html>

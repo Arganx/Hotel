@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    Wybierz pokoj dla siebie
+{% endblock %}
+
+{%  block stylesheets %}
+    <link href="{{ asset('bundles/rooms_style.css') }}" type="text/css" rel="stylesheet" />
+{% endblock %}
+
+
+{% block body %}
+
+{% endblock %}
+
+{% block javascripts %}
+    <script type="text/javascript"
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"
+    >
+
+    </script>
+    <script src="{{ asset('jsBundle/jquery.cycle2.js') }}"></script>
+
+    <a href="/">
+    <div class="cycle-slideshow" id="picture1"
+         data-cycle-swipe=true
+         data-cycle-swipe-fx=scrollHorz
+         data-cycle-timeout=3000
+         data-cycle-prev=".prev"
+         data-cycle-next=".next"
+    >
+
+        <img src="{{ asset('pictures/room1_1m.jpg') }}">
+        <img src="{{ asset('pictures/room1_2m.jpg') }}">
+        <img src="{{ asset('pictures/room1_3m.jpg') }}">
+        <img src="{{ asset('pictures/room1_4m.jpg') }}">
+    </div>
+    </a>
+
+    <a href="/second">
+    <div class="cycle-slideshow" id="picture2"
+         data-cycle-swipe=true
+         data-cycle-swipe-fx=scrollHorz
+         data-cycle-timeout=3000
+         data-cycle-prev=".prev"
+         data-cycle-next=".next"
+    >
+
+        <img src="{{ asset('pictures/room1_1m.jpg') }}">
+        <img src="{{ asset('pictures/room1_2m.jpg') }}">
+        <img src="{{ asset('pictures/room1_3m.jpg') }}">
+        <img src="{{ asset('pictures/room1_4m.jpg') }}">
+    </div>
+    </a>
+
+    <a href="/my">
+    <div class="cycle-slideshow" id="picture3"
+         data-cycle-swipe=true
+         data-cycle-swipe-fx=scrollHorz
+         data-cycle-timeout=3000
+         data-cycle-prev=".prev"
+         data-cycle-next=".next"
+    >
+
+        <img src="{{ asset('pictures/room1_1m.jpg') }}">
+        <img src="{{ asset('pictures/room1_2m.jpg') }}">
+        <img src="{{ asset('pictures/room1_3m.jpg') }}">
+        <img src="{{ asset('pictures/room1_4m.jpg') }}">
+    </div>
+    </a>
+
+    <a href="/rooms">
+    <div class="cycle-slideshow" id="picture4"
+         data-cycle-swipe=true
+         data-cycle-swipe-fx=scrollHorz
+         data-cycle-timeout=3000
+         data-cycle-prev=".prev"
+         data-cycle-next=".next"
+    >
+
+        <img src="{{ asset('pictures/room1_1m.jpg') }}">
+        <img src="{{ asset('pictures/room1_2m.jpg') }}">
+        <img src="{{ asset('pictures/room1_3m.jpg') }}">
+        <img src="{{ asset('pictures/room1_4m.jpg') }}">
+    </div>
+    </a>
+
+{% endblock %}

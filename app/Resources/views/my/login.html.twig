@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+<link href="{{ asset('bundles/login_style.css') }}" type="text/css" rel="stylesheet" />
+{% endblock %}
+
+
+{% block body %}
+{#    <div id="login_box">
+            <li class="login_li"><input class="login" type="text" placeholder="login" aria-label="log"></li>
+            <li class="login_li"><input class="login" type="password" placeholder="password" aria-label="pass"></li>
+            <li class="login_li"><button class="search_button" type="submit">Login</button></li>
+            <li class="login_li"><a href="/register">Nie masz jeszcze konta? Utwórz je teraz</a></li>
+    </div>#}
+
+    <div id="login_box">
+
+        {% if errors %}
+            <div class="allert">
+                {{ errors }}
+            </div>
+        {% endif %}
+        <form action="{{ path('login') }}" method="post">
+            <li class="login_li"> <label for="username">Username:</label></li>
+            <li class="login_li"><input type="text" name="_username" id="username" value="{{ username }}"></li>
+
+            <li class="login_li"><label for="username">Password:</label></li>
+            <li class="login_li"><input type="password" name="_password" id="password"></li>
+            <li class="login_li"><a href="/register">Nie masz jeszcze konta? Utwórz je teraz</a></li>
+            <li class="login_li"><button class="search_button" type="submit">Login</button></li>
+        </form>
+
+    </div>
+
+{% endblock %}
+
+
+
+{% block title %}
+    Zaloguj się
+{% endblock %}

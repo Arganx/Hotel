@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    Second
+{% endblock %}
+
+
+{% block body %}
+    {%  for key in theUser %}
+        <div>
+            {{  key.id }}
+            {{  key.username }}
+            {{  key.password }}
+            {{  key.email }}
+
+        </div>
+
+    {% endfor %}
+    <div>
+        <button>Kliknij mnie</button>
+    </div>
+{% endblock %}

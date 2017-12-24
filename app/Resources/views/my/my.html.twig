@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    <link href="{{ asset('bundles/styl.css') }}" type="text/css" rel="stylesheet" />
+{% endblock %}
+
+
+{% block title %}
+    Tytul
+{% endblock %}
+
+
+{% block body %}
+    <h1>Starting my page</h1>
+    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+        {{ app.user.username }}
+        {{ app.user.type }}
+    {% endif %}
+{% endblock %}
