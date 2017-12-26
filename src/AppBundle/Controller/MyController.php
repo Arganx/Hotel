@@ -2,22 +2,24 @@
 
 namespace AppBundle\Controller;
 
-use AppBundle\Forms\user_form;
+use AppBundle\Entity\room;
+use AppBundle\Entity\visit;
+//use Doctrine\DBAL\Types\DateType;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\DomCrawler\Field\ChoiceFormField;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\HttpFoundation\Request;
 use AppBundle\Entity\users1;
 
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
-use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
@@ -242,5 +244,527 @@ class MyController extends Controller
     {
 
         return $this->render(':my:rooms.html.twig');
+    }
+
+
+    /**
+     * @Route("/addRoom", name="roomAdd")
+     */
+    public function addRoomAction(Request $request)
+    {
+        $room=new room();
+
+        $form = $this->createFormBuilder($room)
+            ->add('name',TextType::class)
+            ->add('type', ChoiceType::class, array(
+                'choices'  => array(
+                    'single' => 'single',
+                    'double' => 'double',
+                    'luxury' => 'luxury',
+                    'wedding' => 'wedding',
+                ),
+            ))
+            ->add('price',IntegerType::class)
+            ->add('extraBed',IntegerType::class)
+            ->add('description',TextareaType::class)
+            ->add('save',SubmitType::class,array('label'=>'Dodaj pokoj'))
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $name = $form['name']->getData();
+            $type = $form['type']->getData();
+            $price = $form['price']->getData();
+            $extraBed= $form['extraBed']->getData();
+            $description = $form['description']->getData();
+
+
+            $room->setName($name);
+            $room->setType($type);
+            $room->setExtraBed($extraBed);
+            $room->setPrice($price);
+            $room->setDescription($description);
+
+            $em=$this->getDoctrine()->getManager();
+            $em->persist($room);
+            $em->flush();
+
+
+
+            return $this->redirect('/');
+        }
+
+        return $this->render('my/addRoom.html.twig',array('form'=> $form->createView()));
+    }
+
+    /**
+     * @Route("/addVisitSingle", name="roomSingle")
+     */
+    public function addVistSingle(Request $request)
+    {
+        $visit=new visit();
+
+        $form = $this->createFormBuilder($visit)
+            ->add('startDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('endDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('save',SubmitType::class,array('label'=>'Dodaj pokoj'))
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $guest = $this->getUser()->getId();
+            $startDate = $form['startDate']->getData();
+            $endDate = $form['endDate']->getData();
+
+            $rooms = $this->getDoctrine()
+                ->getRepository('AppBundle:room')
+                ->findAll();
+            $visits = $this->getDoctrine()
+                ->getRepository('AppBundle:visit')
+                ->findAll();
+
+            $free = 1;
+            $help=null;
+            foreach ($rooms as &$value) {
+                if($value->getType()=="single")
+                {
+                    foreach ($visits as &$vis)
+                    {
+                        if($vis->getRoom()==$value->getId())    //ten sam pokoj w wizycie
+                        {
+                            if($vis->getStartDate()<$startDate)//sprawdzam daty poczatkowe
+                            {
+                                if($vis->getEndDate()<$startDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else if($vis->getStartDate()>$startDate)
+                            {
+                                if($vis->getStartDate()>$endDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else
+                            {
+                                $free=0;
+                            }
+                        }
+                    }
+                if($free==1)
+                {
+                    $help=$value;
+                }
+                $free=1;
+                }
+            }
+            $extraBed= 0;
+            if($help!=null) {
+                $room = $help->getId();
+                $diff = $startDate->diff($endDate)->format("%a");
+                $price = $help->getPrice()*$diff+$extraBed*$help->getExtraBed();
+
+
+
+
+                $visit->setGuest($guest);
+                $visit->setRoom($room);
+                $visit->setExtraBeds($extraBed);
+                $visit->setPrice($price);
+                $visit->setstartDate($startDate);
+                $visit->setendDate($endDate);
+
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($visit);
+                $em->flush();
+
+
+                //return $this->redirect('/successfulVisit');
+            }
+            else
+            {
+                return $this->redirect('/failedVisit');
+            }
+        }
+
+        return $this->render('my/addVisitSingle.html.twig',array('form'=> $form->createView()));
+    }
+    /**
+     * @Route("/successfulVisit", name="succes")
+     */
+    public function succesVisit(Request $request)
+    {
+
+        return $this->render('my/successfulVisit.html.twig');
+    }
+
+    /**
+     * @Route("/failedVisit", name="fail")
+     */
+    public function failedVisit(Request $request)
+    {
+
+        return $this->render('my/failedVisit.html.twig');
+    }
+
+
+    /**
+     * @Route("/addVisitDouble", name="roomDouble")
+     */
+    public function addVistDouble(Request $request)
+    {
+        $visit=new visit();
+
+        $form = $this->createFormBuilder($visit)
+            ->add('startDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('endDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('extraBeds',ChoiceType::class, array(
+                'choices'  => array(
+                    '0' => '0',
+                    '1' => '1',
+                    '2' => '2',
+                ),
+            ))
+            ->add('save',SubmitType::class,array('label'=>'Dodaj pokoj'))
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $guest = $this->getUser()->getId();
+            $startDate = $form['startDate']->getData();
+            $endDate = $form['endDate']->getData();
+            $extraBed= $form['extraBeds']->getData();
+
+            $rooms = $this->getDoctrine()
+                ->getRepository('AppBundle:room')
+                ->findAll();
+            $visits = $this->getDoctrine()
+                ->getRepository('AppBundle:visit')
+                ->findAll();
+
+            $free = 1;
+            $help=null;
+            foreach ($rooms as &$value) {
+                if($value->getType()=="double")
+                {
+                    foreach ($visits as &$vis)
+                    {
+                        if($vis->getRoom()==$value->getId())    //ten sam pokoj w wizycie
+                        {
+                            if($vis->getStartDate()<$startDate)//sprawdzam daty poczatkowe
+                            {
+                                if($vis->getEndDate()<$startDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else if($vis->getStartDate()>$startDate)
+                            {
+                                if($vis->getStartDate()>$endDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else
+                            {
+                                $free=0;
+                            }
+                        }
+                    }
+                    if($free==1)
+                    {
+                        $help=$value;
+                    }
+                    $free=1;
+                }
+            }
+
+
+            if($help!=null) {
+                $room = $help->getId();
+                $price = $help->getPrice();
+
+
+                $visit->setGuest($guest);
+                $visit->setRoom($room);
+                $visit->setExtraBeds($extraBed);
+                $visit->setPrice($price);
+                $visit->setstartDate($startDate);
+                $visit->setendDate($endDate);
+
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($visit);
+                $em->flush();
+
+
+                return $this->redirect('/successfulVisit');
+            }
+            else
+            {
+                return $this->redirect('/failedVisit');
+            }
+        }
+
+        return $this->render('my/addVisitSingle.html.twig',array('form'=> $form->createView()));
+    }
+
+
+    /**
+     * @Route("/addVisitLuxury", name="roomLuxury")
+     */
+    public function addVistLuxury(Request $request)
+    {
+        $visit=new visit();
+
+        $form = $this->createFormBuilder($visit)
+            ->add('startDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('endDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('extraBeds',ChoiceType::class, array(
+                'choices'  => array(
+                    '0' => '0',
+                    '1' => '1',
+                ),
+            ))
+            ->add('save',SubmitType::class,array('label'=>'Dodaj pokoj'))
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $guest = $this->getUser()->getId();
+            $startDate = $form['startDate']->getData();
+            $endDate = $form['endDate']->getData();
+            $extraBed= $form['extraBeds']->getData();
+
+            $rooms = $this->getDoctrine()
+                ->getRepository('AppBundle:room')
+                ->findAll();
+            $visits = $this->getDoctrine()
+                ->getRepository('AppBundle:visit')
+                ->findAll();
+
+            $free = 1;
+            $help=null;
+            foreach ($rooms as &$value) {
+                if($value->getType()=="luxury")
+                {
+                    foreach ($visits as &$vis)
+                    {
+                        if($vis->getRoom()==$value->getId())    //ten sam pokoj w wizycie
+                        {
+                            if($vis->getStartDate()<$startDate)//sprawdzam daty poczatkowe
+                            {
+                                if($vis->getEndDate()<$startDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else if($vis->getStartDate()>$startDate)
+                            {
+                                if($vis->getStartDate()>$endDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else
+                            {
+                                $free=0;
+                            }
+                        }
+                    }
+                    if($free==1)
+                    {
+                        $help=$value;
+                    }
+                    $free=1;
+                }
+            }
+
+
+            if($help!=null) {
+                $room = $help->getId();
+                $price = $help->getPrice();
+
+
+                $visit->setGuest($guest);
+                $visit->setRoom($room);
+                $visit->setExtraBeds($extraBed);
+                $visit->setPrice($price);
+                $visit->setstartDate($startDate);
+                $visit->setendDate($endDate);
+
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($visit);
+                $em->flush();
+
+
+                return $this->redirect('/successfulVisit');
+            }
+            else
+            {
+                return $this->redirect('/failedVisit');
+            }
+        }
+
+        return $this->render('my/addVisitLuxury.html.twig',array('form'=> $form->createView()));
+    }
+
+    /**
+     * @Route("/addVisitWedding", name="roomWedding")
+     */
+    public function addVistWedding(Request $request)
+    {
+        $visit=new visit();
+
+        $form = $this->createFormBuilder($visit)
+            ->add('startDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('endDate',DateType::class, array(
+                // render as a single text box
+                'widget' => 'single_text',
+            ))
+            ->add('save',SubmitType::class,array('label'=>'Dodaj pokoj'))
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $guest = $this->getUser()->getId();
+            $startDate = $form['startDate']->getData();
+            $endDate = $form['endDate']->getData();
+            $extraBed= 0;
+
+            $rooms = $this->getDoctrine()
+                ->getRepository('AppBundle:room')
+                ->findAll();
+            $visits = $this->getDoctrine()
+                ->getRepository('AppBundle:visit')
+                ->findAll();
+
+            $free = 1;
+            $help=null;
+            foreach ($rooms as &$value) {
+                if($value->getType()=="wedding")
+                {
+                    foreach ($visits as &$vis)
+                    {
+                        if($vis->getRoom()==$value->getId())    //ten sam pokoj w wizycie
+                        {
+                            if($vis->getStartDate()<$startDate)//sprawdzam daty poczatkowe
+                            {
+                                if($vis->getEndDate()<$startDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else if($vis->getStartDate()>$startDate)
+                            {
+                                if($vis->getStartDate()>$endDate)
+                                {
+
+                                }
+                                else
+                                {
+                                    $free=0;
+                                }
+                            }
+                            else
+                            {
+                                $free=0;
+                            }
+                        }
+                    }
+                    if($free==1)
+                    {
+                        $help=$value;
+                    }
+                    $free=1;
+                }
+            }
+
+
+            if($help!=null) {
+                $room = $help->getId();
+                $price = $help->getPrice();
+
+
+                $visit->setGuest($guest);
+                $visit->setRoom($room);
+                $visit->setExtraBeds($extraBed);
+                $visit->setPrice($price);
+                $visit->setstartDate($startDate);
+                $visit->setendDate($endDate);
+
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($visit);
+                $em->flush();
+
+
+                return $this->redirect('/successfulVisit');
+            }
+            else
+            {
+                return $this->redirect('/failedVisit');
+            }
+        }
+
+        return $this->render('my/addVisitWedding.html.twig',array('form'=> $form->createView()));
     }
 }
