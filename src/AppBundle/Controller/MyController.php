@@ -2,8 +2,11 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\AppBundle;
 use AppBundle\Entity\room;
+use AppBundle\Entity\services;
 use AppBundle\Entity\visit;
+use AppBundle\Entity\services_connection;
 //use Doctrine\DBAL\Types\DateType;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -14,6 +17,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\HttpFoundation\Request;
 use AppBundle\Entity\users1;
 
+use Doctrine\ORM\EntityRepository;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -22,6 +26,8 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\Validator\Constraints\Date;
+use Symfony\Component\Validator\Constraints\DateTime;
 
 class MyController extends Controller
 {
@@ -766,5 +772,94 @@ class MyController extends Controller
         }
 
         return $this->render('my/addVisitWedding.html.twig',array('form'=> $form->createView()));
+    }
+
+    /**
+     * @Route("/addServiceConnection", name="addConection")
+     */
+    public function addConnection(Request $request)
+    {
+
+        $userid=$this->getUser()->getId();
+        $services = new services();
+
+        $services_connection = new services_connection();
+
+        $repo = $this->getDoctrine()->getRepository('AppBundle:services');
+
+
+        $form = $this->createFormBuilder($services)
+            ->add('name',EntityType::class,array(
+                'class' => services::class,
+                'choice_label' => 'name',
+
+            ))
+            ->add('save',SubmitType::class,array('label'=>'Zamów'))
+            ->getForm();
+
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $visit = $this->getDoctrine()
+                ->getRepository('AppBundle:visit')
+                ->findAll();
+
+
+            $found =0;
+            foreach ($visit as &$vis) {
+                if($vis->getGuest()==$this->getUser()->getId())
+                {
+                    if($services_connection->getDate()<=$vis->getEndDate()&&$vis->getStartDate()<=$services_connection->getDate())
+                    {
+                        $found=1;
+                        $visitId=$vis->getId();
+                    }
+                }
+            }
+
+            if($found==1) {
+                $serviceIdtmp = $form['name']->getData();
+                $serviceId = null;
+
+                $serv = $this->getDoctrine()
+                    ->getRepository('AppBundle:services')
+                    ->findAll();
+
+                foreach ($serv as &$value) {
+                    if ($value->getName() == $serviceIdtmp->getname()) {
+                        $serviceId = $value->getId();
+                    }
+                }
+
+                $services_connection->setVisitId($visitId);
+                $services_connection->setServiceId($serviceId);
+
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($services_connection);
+                $em->flush();
+
+                $product = $em->getRepository(visit::class)->find($visitId);
+                if (!$product) {
+                    throw $this->createNotFoundException(
+                        'No user found for name '
+                    );
+                }
+                $price = $product->getPrice();
+                $price += $em->getRepository(services::class)->find($serviceId)->getPrice();
+                $product->setPrice($price);
+                $em->flush();
+
+
+                return $this->redirect('/');
+            }
+            else
+            {
+                echo "Niestety nie przebywasz aktualnie w naszym hotelu, więc nie możesz zamówić dodatkowych usług. Zapraszamy do ponownej próby skorzystania w trakcie trwania państwa wizyty";
+            }
+        }
+
+        return $this->render('my/addService_connection.html.twig',array('form'=> $form->createView()));
     }
 }
